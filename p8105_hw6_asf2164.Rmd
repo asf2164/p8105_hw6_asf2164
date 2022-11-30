@@ -72,9 +72,48 @@ ggplot(aes(x = fct_reorder(city_state, OR), y = OR)) +
 ```
 
 
+
 #Problem 3
 
 ```{r}
+library(tidyverse) 
+library(dplyr)
+library(modelr)
+library(mgcv)
+
+birthweight_df =
+  read_csv("Data/birthweight.csv") %>%
+  janitor::clean_names() %>% 
+  mutate(babysex = as.factor(babysex), frace = as.factor(frace), malform = as.factor(malform), mrace = as.factor(mrace)) %>% 
+  drop_na()
+  
+```
+
+Model: 
+birthweigth = babysex + malform + menarche + pnumlbw + menarche*pnumlbw 
+
+```{r}
+model1_logistic = lm(bwt ~ babysex + malform + menarche + pnumlbw + menarche * pnumlbw, data = birthweight_df)
+  
+model1_logistic %>% 
+  broom::tidy() %>% 
+  select(term, estimate, p.value, std.error) %>% 
+  knitr::kable(digits = 3)
+
+model1plot = 
+  birthweight_df %>% 
+  add_residuals(model1_logistic) %>% 
+  add_predictions(model1_logistic)
+
+model1plot %>% 
+  ggplot(aes(x = pred, y = resid)) + geom_point()
+  
+model2_logistic = lm(bwt ~ blength + gaweeks, data = birthweight_df) 
+
+model3_logistic = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = birthweight_df)
+
+model1cv_df = 
+  crossv_mc(model1plot, 100)
 
 ```
 
