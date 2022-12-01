@@ -1,6 +1,6 @@
 ---
 title: "homework6"
-output: html_document
+output: github_document
 date: "2022-11-28"
 ---
 
@@ -71,7 +71,7 @@ ggplot(aes(x = fct_reorder(city_state, OR), y = OR)) +
   ) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-
+The plot looks at the Odds Ratio of a case being closed. The confidence intervals for each of the cities vary greatly, but Albuquerque having the highest Odds Ratio and biggest CI. Meanwhile, New York has the lowest odds ratio and one of the smallest CI. Among cities with an OR higher than 1, none of them are significant because all of their CI cross through the null value of 1. However, for cities with OR less than 1, there are some cities that are significant. This suggests that most cities have higher odds of a case being open than closed. 
 
 #Problem 3
 
@@ -107,13 +107,26 @@ model1plot =
 
 model1plot %>% 
   ggplot(aes(x = pred, y = resid)) + geom_point()
-  
-model2_logistic = lm(bwt ~ blength + gaweeks, data = birthweight_df) 
 
-model3_logistic = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = birthweight_df)
+cv_df = 
+  crossv_mc(birthweight_df, 100) 
 
-model1cv_df = 
-  crossv_mc(model1plot, 100)
+cv_df = 
+  cv_df %>% 
+  mutate(
+    model1_mod  = map(train, ~lm(bwt ~ babysex + malform + menarche + pnumlbw + menarche * pnumlbw, data = birthweight_df)),
+    model2_mod  = map(train, ~lm(bwt ~ blength + gaweeks, data = birthweight_df)),
+    model3_mod  = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex + bhead * blength * babysex, data = birthweight_df))) 
+
+cv_df %>% 
+  select(starts_with("model")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
 
 ```
 
